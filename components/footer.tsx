@@ -55,7 +55,7 @@ export function Footer() {
                   className="border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-sm group"
                 >
                   <a
-                    href="https://github.com/Prit123456789"
+                    href="https://github.com/pritpatel2412"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center"
@@ -110,7 +110,7 @@ export function Footer() {
                 <Heart className="h-4 w-4 mx-2 text-red-400 animate-pulse" />
                 <span>by</span>
                 <a
-                  href="https://github.com/Prit123456789"
+                  href="https://github.com/pritpatel2412"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ml-1 text-blue-400 hover:text-blue-300 font-medium transition-colors"
