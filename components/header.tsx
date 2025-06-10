@@ -36,7 +36,7 @@ export function Header() {
             <div className="mt-3 flex items-center justify-center lg:justify-start text-sm text-slate-400">
               <span className="mr-2">Created by</span>
               <a
-                href="https://github.com/Prit123456789"
+                href="https://github.com/pritpatel2412"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
@@ -56,7 +56,7 @@ export function Header() {
                 className="border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-sm group"
               >
                 <a
-                  href="https://github.com/Prit123456789"
+                  href="https://github.com/pritpatel2412"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center"
