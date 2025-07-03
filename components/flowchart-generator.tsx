@@ -7,6 +7,9 @@ import { HeroSection } from "./hero-section"
 import { EnhancedTemplates } from "./enhanced-templates"
 import { FlowchartGallery } from "./flowchart-gallery"
 import { AIAnalysis } from "./ai-analysis"
+import { AIChatAssistant } from "./ai-chat-assistant"
+import { PresentationMode } from "./presentation-mode"
+import { InteractiveTutorial } from "./interactive-tutorial"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,6 +30,9 @@ import {
   Code,
   Share2,
   Eye,
+  MessageCircle,
+  Presentation,
+  GraduationCap,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import mermaid from "mermaid"
@@ -43,6 +49,7 @@ const FlowchartGenerator = () => {
   const [generationTime, setGenerationTime] = useState<number | null>(null)
   const [syntaxErrors, setSyntaxErrors] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState("create")
+  const [showTutorial, setShowTutorial] = useState(false)
   const { toast } = useToast()
   const { trackFlowchartCreated, trackApiCall, trackGenerationError } = useStats()
   const createSectionRef = useRef<HTMLDivElement>(null)
@@ -129,8 +136,9 @@ const FlowchartGenerator = () => {
     }
   }
 
-  const generateFlowchart = async () => {
-    if (!prompt.trim()) {
+  const generateFlowchart = async (customPrompt?: string) => {
+    const promptToUse = customPrompt || prompt
+    if (!promptToUse.trim()) {
       toast({
         title: "Empty prompt",
         description: "Please enter a description for your flowchart.",
@@ -154,7 +162,7 @@ const FlowchartGenerator = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt: promptToUse }),
       })
 
       if (!response.ok) {
@@ -186,7 +194,7 @@ const FlowchartGenerator = () => {
 
         // Auto-save to gallery (removed manual save feature)
         setTimeout(() => {
-          autoSaveToGallery(data.flowchart, svg)
+          autoSaveToGallery(data.flowchart, svg, promptToUse)
         }, 1000)
       } catch (mermaidError) {
         console.error("Mermaid error details:", mermaidError)
@@ -211,7 +219,7 @@ const FlowchartGenerator = () => {
 
             // Auto-save to gallery
             setTimeout(() => {
-              autoSaveToGallery(fixedCode, svg)
+              autoSaveToGallery(fixedCode, svg, promptToUse)
             }, 1000)
             return
           } catch (secondError) {
@@ -245,10 +253,10 @@ const FlowchartGenerator = () => {
   }
 
   // Auto-save function (replaces manual save)
-  const autoSaveToGallery = (code: string, svg: string) => {
+  const autoSaveToGallery = (code: string, svg: string, usedPrompt: string) => {
     if (!code || !svg) return
 
-    const title = prompt.slice(0, 40) + (prompt.length > 40 ? "..." : "")
+    const title = usedPrompt.slice(0, 40) + (usedPrompt.length > 40 ? "..." : "")
     const saved = localStorage.getItem("flowsketch-saved") || "[]"
     const existing = JSON.parse(saved)
 
@@ -259,7 +267,7 @@ const FlowchartGenerator = () => {
     const newFlowchart = {
       id: Date.now().toString(),
       title,
-      description: prompt,
+      description: usedPrompt,
       code,
       svgContent: svg,
       createdAt: new Date(),
@@ -509,6 +517,13 @@ const FlowchartGenerator = () => {
     })
   }
 
+  const handleTutorialComplete = () => {
+    toast({
+      title: "Tutorial Complete! 🎉",
+      description: "You're ready to create amazing flowcharts!",
+    })
+  }
+
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: true,
@@ -530,29 +545,54 @@ const FlowchartGenerator = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <InteractiveTutorial onComplete={handleTutorialComplete} />
+
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <Header />
 
         {/* Hero Section */}
         <HeroSection onGetStarted={scrollToCreate} />
 
+        {/* Tutorial Button */}
+        <div className="mb-8 text-center">
+          <Button
+            onClick={() => {
+              localStorage.removeItem("flowsketch-tutorial-completed")
+              window.location.reload()
+            }}
+            variant="outline"
+            className="border-white/20 bg-white/5 hover:bg-white/10 text-white"
+          >
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Restart Tutorial
+          </Button>
+        </div>
+
         {/* Main Content */}
         <div ref={createSectionRef}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/10">
-              <TabsTrigger value="create" className="data-[state=active]:bg-white/10">
+            <TabsList className="grid w-full grid-cols-6 bg-white/5 border border-white/10 backdrop-blur-sm">
+              <TabsTrigger value="create" className="data-[state=active]:bg-white/10 transition-all duration-200">
                 <Zap className="h-4 w-4 mr-2" />
                 Create
               </TabsTrigger>
-              <TabsTrigger value="templates" className="data-[state=active]:bg-white/10">
+              <TabsTrigger value="chat" className="data-[state=active]:bg-white/10 transition-all duration-200">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                AI Chat
+              </TabsTrigger>
+              <TabsTrigger value="templates" className="data-[state=active]:bg-white/10 transition-all duration-200">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Templates
               </TabsTrigger>
-              <TabsTrigger value="gallery" className="data-[state=active]:bg-white/10">
+              <TabsTrigger value="gallery" className="data-[state=active]:bg-white/10 transition-all duration-200">
                 <Eye className="h-4 w-4 mr-2" />
                 Gallery
               </TabsTrigger>
-              <TabsTrigger value="analysis" className="data-[state=active]:bg-white/10">
+              <TabsTrigger value="present" className="data-[state=active]:bg-white/10 transition-all duration-200">
+                <Presentation className="h-4 w-4 mr-2" />
+                Present
+              </TabsTrigger>
+              <TabsTrigger value="analysis" className="data-[state=active]:bg-white/10 transition-all duration-200">
                 <Code className="h-4 w-4 mr-2" />
                 Analysis
               </TabsTrigger>
@@ -566,12 +606,12 @@ const FlowchartGenerator = () => {
                     {/* Header with API Test */}
                     <div className="flex justify-between items-center">
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                          <Palette className="h-5 w-5 text-white" />
+                        <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+                          <Palette className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <h2 className="text-xl font-semibold text-white">Create Your Flowchart</h2>
-                          <p className="text-slate-400 text-sm">Describe your process and watch it come to life</p>
+                          <h2 className="text-2xl font-bold text-white">Create Your Flowchart</h2>
+                          <p className="text-slate-400">Describe your process and watch AI create magic</p>
                         </div>
                       </div>
                       <Button
@@ -579,7 +619,7 @@ const FlowchartGenerator = () => {
                         size="sm"
                         onClick={testApiConnection}
                         disabled={isTesting}
-                        className="border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-sm"
+                        className="border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
                       >
                         {isTesting ? (
                           <>
@@ -605,12 +645,12 @@ const FlowchartGenerator = () => {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Example: User registration process with email verification, password validation, and welcome email..."
-                        className="min-h-[120px] resize-none bg-white/5 border-white/20 text-white placeholder:text-slate-400 focus:border-blue-400 focus:ring-blue-400/20"
+                        className="min-h-[120px] resize-none bg-white/5 border-white/20 text-white placeholder:text-slate-400 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
                       />
                       <Button
-                        onClick={generateFlowchart}
+                        onClick={() => generateFlowchart()}
                         disabled={isGenerating || !prompt.trim()}
-                        className="w-full h-12 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium text-lg shadow-lg"
+                        className="w-full h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-semibold text-lg shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.02]"
                       >
                         {isGenerating ? (
                           <>
@@ -635,11 +675,11 @@ const FlowchartGenerator = () => {
                   {/* Header with Actions */}
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg">
-                        <CheckCircle className="h-5 w-5 text-white" />
+                      <div className="p-3 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl shadow-lg">
+                        <CheckCircle className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-semibold text-white">Your Professional Flowchart</h3>
+                        <h3 className="text-2xl font-bold text-white">Your Professional Flowchart</h3>
                         <div className="flex items-center space-x-4 text-sm text-slate-400">
                           {generationTime && (
                             <div className="flex items-center">
@@ -669,7 +709,7 @@ const FlowchartGenerator = () => {
                           variant="outline"
                           size="sm"
                           onClick={retryGeneration}
-                          className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
+                          className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 transition-all duration-200 bg-transparent"
                         >
                           <RefreshCw className="h-4 w-4 mr-2" />
                           Retry
@@ -680,7 +720,7 @@ const FlowchartGenerator = () => {
                         size="sm"
                         onClick={shareFlowchart}
                         disabled={!flowchart || !svgContent}
-                        className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                        className="border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all duration-200 bg-transparent"
                       >
                         <Share2 className="h-4 w-4 mr-2" />
                         Share
@@ -690,7 +730,7 @@ const FlowchartGenerator = () => {
                         size="sm"
                         onClick={copyToClipboard}
                         disabled={!flowchart}
-                        className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                        className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10 transition-all duration-200 bg-transparent"
                       >
                         <Copy className="h-4 w-4 mr-2" />
                         Copy Code
@@ -700,7 +740,7 @@ const FlowchartGenerator = () => {
                         size="sm"
                         onClick={downloadSvg}
                         disabled={!svgContent}
-                        className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                        className="border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all duration-200 bg-transparent"
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Download SVG
@@ -710,7 +750,7 @@ const FlowchartGenerator = () => {
 
                   {/* Syntax Warnings */}
                   {syntaxErrors.length > 0 && (
-                    <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl backdrop-blur-sm">
                       <div className="flex items-center mb-2">
                         <Code className="h-4 w-4 text-yellow-400 mr-2" />
                         <span className="text-sm font-medium text-yellow-400">Syntax Warnings Detected</span>
@@ -725,17 +765,17 @@ const FlowchartGenerator = () => {
 
                   {/* Flowchart Display */}
                   <div className="relative">
-                    <div className="border border-white/20 rounded-xl p-6 min-h-[500px] bg-white/95 backdrop-blur-sm">
+                    <div className="border border-white/20 rounded-2xl p-6 min-h-[500px] bg-white/95 backdrop-blur-sm shadow-inner">
                       {error ? (
                         <div className="w-full h-full flex flex-col items-center justify-center text-red-500 space-y-4">
-                          <AlertCircle className="h-12 w-12" />
+                          <AlertCircle className="h-16 w-16" />
                           <div className="text-center">
-                            <p className="font-medium">{error}</p>
+                            <p className="font-medium text-lg">{error}</p>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={retryGeneration}
-                              className="mt-3 border-red-500/50 text-red-500 hover:bg-red-500/10"
+                              className="mt-4 border-red-500/50 text-red-500 hover:bg-red-500/10 bg-transparent"
                             >
                               <RefreshCw className="h-4 w-4 mr-2" />
                               Try Again
@@ -748,14 +788,16 @@ const FlowchartGenerator = () => {
                         </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-500">
-                          <div className="text-center space-y-4">
+                          <div className="text-center space-y-6">
                             <div className="relative">
-                              <Palette className="mx-auto h-16 w-16 text-slate-400" />
-                              <div className="absolute inset-0 h-16 w-16 mx-auto text-slate-400 animate-pulse"></div>
+                              <Palette className="mx-auto h-20 w-20 text-slate-400" />
+                              <div className="absolute inset-0 h-20 w-20 mx-auto text-slate-400 animate-pulse"></div>
                             </div>
                             <div>
-                              <p className="text-lg font-medium">Ready to create something amazing?</p>
-                              <p className="text-sm mt-1">Your professional flowchart will appear here</p>
+                              <p className="text-xl font-semibold">Ready to create something amazing?</p>
+                              <p className="text-sm mt-2 text-slate-400">
+                                Your professional flowchart will appear here
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -765,8 +807,8 @@ const FlowchartGenerator = () => {
 
                   {/* Color Legend */}
                   {svgContent && (
-                    <div className="mt-6 p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
-                      <h4 className="text-lg font-medium text-white mb-4 flex items-center">
+                    <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
                         <Palette className="h-5 w-5 mr-2 text-blue-400" />
                         Professional Color Scheme
                       </h4>
@@ -794,19 +836,23 @@ const FlowchartGenerator = () => {
                   {/* Debug Code View */}
                   {flowchart && (
                     <details className="mt-6">
-                      <summary className="text-sm text-slate-400 cursor-pointer hover:text-slate-300 flex items-center">
+                      <summary className="text-sm text-slate-400 cursor-pointer hover:text-slate-300 flex items-center transition-colors duration-200">
                         <span>View Generated Mermaid Code</span>
                         <Badge variant="outline" className="ml-2 text-xs">
                           Advanced
                         </Badge>
                       </summary>
-                      <div className="mt-3 p-4 bg-slate-900/50 border border-white/10 rounded-lg">
+                      <div className="mt-3 p-4 bg-slate-900/50 border border-white/10 rounded-xl">
                         <pre className="text-xs text-slate-300 overflow-auto whitespace-pre-wrap">{flowchart}</pre>
                       </div>
                     </details>
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="chat">
+              <AIChatAssistant onGenerateFlowchart={generateFlowchart} currentPrompt={prompt} />
             </TabsContent>
 
             <TabsContent value="templates">
@@ -817,6 +863,10 @@ const FlowchartGenerator = () => {
               <FlowchartGallery onLoadFlowchart={handleLoadFromGallery} />
             </TabsContent>
 
+            <TabsContent value="present">
+              <PresentationMode svgContent={svgContent} flowchartCode={flowchart} title={prompt.slice(0, 50)} />
+            </TabsContent>
+
             <TabsContent value="analysis">
               <AIAnalysis flowchartCode={flowchart} />
             </TabsContent>
@@ -824,7 +874,7 @@ const FlowchartGenerator = () => {
         </div>
 
         {/* Collaboration & Sharing Panel */}
-        <div className="mt-8">
+        <div className="mt-12">
           <CollaborationPanel flowchartCode={flowchart} svgContent={svgContent} />
         </div>
 
