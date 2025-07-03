@@ -13,7 +13,7 @@ export function Footer() {
             <div className="flex items-center text-slate-400">
               <span>Created by</span>
               <a
-                href="https://github.com/Prit123456789"
+                href="https://github.com/pritpatel2412"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ml-1 text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200 hover:underline"
